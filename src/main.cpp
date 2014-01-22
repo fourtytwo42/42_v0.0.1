@@ -834,8 +834,12 @@ static const int64 nDiffChangeTarget = 600000;
 
 int64 static GetBlockValue(int nHeight, int64 nFees)
 {
-    int64 nSubsidy = 0.000042 * COIN;
-    if(nHeight < 419)
+    int64 nSubsidy = 0 * COIN;
+    if(nHeight < 990371) // stops generation of more coins
+    {
+    	nSubsidy = 0.000042 * COIN;
+    }
+    if(nHeight < 418)
     {
        nSubsidy = 0.0000001 * COIN;
 	}
@@ -855,14 +859,19 @@ int64 static GetBlockValue(int nHeight, int64 nFees)
     {
        nSubsidy = 0.00042 * COIN;
 	}
-    if(nHeight == 424242)
+    if(nHeight == 424242) /// after this block not infinity coins are to be mined. no way can we make it all the way to the next huge payout. so change it and cap the monetary base
     {
        nSubsidy = 0.00042 * COIN;
 	}
-    if(nHeight == 4242424)
+    if(nHeight == 990371) //last possible block wheree we can give out a block reward and also even out to 42 coins
     {
-       nSubsidy = 0.00042 * COIN;
-	}
+    	nSubsidy = 0.0004623 * COIN;
+    	}
+
+    if(nHeight >= 990372) // stops generation of more coins
+    {
+    	nSubsidy = 0 * COIN;
+    }
     return nSubsidy + nFees;
 }
 
@@ -1470,7 +1479,7 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
     }
 
     if (vtx[0].GetValueOut() > GetBlockValue(pindex->nHeight, nFees))
-        return false;
+       return DoS(100, error("ConnectBlock() : coinbase pays too much (actual=%"PRI64d" vs limit=%"PRI64d")", vtx[0].GetValueOut(), GetBlockValue(pindex->nHeight, nFees)));
 
     // Update block index on disk without changing it in memory.
     // The memory index structure will be changed after the db commits.
